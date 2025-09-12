@@ -340,7 +340,13 @@ pub(crate) fn run_global_ctxt(
     // (see https://github.com/rust-lang/rust/pull/73566#issuecomment-656954425),
     // so type-check everything other than function bodies in this crate before running lints.
 
-    let expanded_macros = source_macro_expansion(&render_options, output_format, tcx);
+    let expanded_macros = {
+        // We need for these variables to be removed to ensure that the `Crate` won't be "stolen"
+        // anymore.
+        let (_resolver, krate) = &*tcx.resolver_for_lowering().borrow();
+
+        source_macro_expansion(&krate, &render_options, output_format, tcx.sess.source_map())
+    };
 
     // NOTE: this does not call `tcx.analysis()` so that we won't
     // typeck function bodies or run the default rustc lints.

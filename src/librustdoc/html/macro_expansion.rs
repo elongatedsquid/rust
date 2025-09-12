@@ -1,7 +1,6 @@
 use rustc_ast::visit::{Visitor, walk_crate, walk_expr, walk_item, walk_pat, walk_stmt};
-use rustc_ast::{Expr, Item, Pat, Stmt};
+use rustc_ast::{Crate, Expr, Item, Pat, Stmt};
 use rustc_data_structures::fx::FxHashMap;
-use rustc_middle::ty::TyCtxt;
 use rustc_span::source_map::SourceMap;
 use rustc_span::{BytePos, Span};
 
@@ -9,19 +8,15 @@ use crate::config::{OutputFormat, RenderOptions};
 
 /// It returns the expanded macros correspondence map.
 pub(crate) fn source_macro_expansion(
+    krate: &Crate,
     render_options: &RenderOptions,
     output_format: OutputFormat,
-    tcx: TyCtxt<'_>,
+    source_map: &SourceMap,
 ) -> FxHashMap<BytePos, Vec<ExpandedCode>> {
-    if render_options.generate_macro_expansion
-        && output_format == OutputFormat::Html
+    if output_format == OutputFormat::Html
         && !render_options.html_no_source
+        && render_options.generate_macro_expansion
     {
-        // We need for these variables to be removed to ensure that the `Crate` won't be "stolen"
-        // anymore.
-        let (_resolver, krate) = &*tcx.resolver_for_lowering().borrow();
-        let source_map = tcx.sess.source_map();
-
         let mut expanded_visitor = ExpandedCodeVisitor { expanded_codes: Vec::new(), source_map };
         walk_crate(&mut expanded_visitor, krate);
         expanded_visitor.compute_expanded()
