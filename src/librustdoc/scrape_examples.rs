@@ -18,6 +18,7 @@ use rustc_span::edition::Edition;
 use rustc_span::{BytePos, FileName, SourceFile};
 use tracing::{debug, trace, warn};
 
+use crate::formats::renderer::FormatRenderer;
 use crate::html::render::Context;
 use crate::{clean, config, formats};
 
@@ -275,8 +276,7 @@ pub(crate) fn run(
     let inner = move || -> Result<(), String> {
         // Generates source files for examples
         renderopts.no_emit_shared = true;
-        let (cx, _) = Context::init(krate, renderopts, cache, tcx, Default::default())
-            .map_err(|e| e.to_string())?;
+        let (cx, _) = Context::init(krate, renderopts, cache, tcx).map_err(|e| e.to_string())?;
 
         // Collect CrateIds corresponding to provided target crates
         // If two different versions of the crate in the dependency tree, then examples will be
